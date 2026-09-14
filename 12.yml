@@ -1,4 +1,4 @@
-name: context variable hi
+name: context variable 
 
 on: workflow_dispatch
 jobs:
