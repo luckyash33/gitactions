@@ -36,4 +36,4 @@ jobs:
               env:
                 CLOUD: Google Cloud
               run: echo "I am running a project named ${{ github.repositoy }}"
-              run: echo "I am running a project named ${{ github.actor }}"
+              
