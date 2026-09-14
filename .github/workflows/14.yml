@@ -1,4 +1,4 @@
-name: context variable 
+name: ayyopapam
 
 on: workflow_dispatch
 jobs:
