@@ -1,0 +1,23 @@
+name: ayyopapam hmhm
+
+on: workflow_dispatch
+
+jobs:
+  print-cloud:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: The repo name
+        run: echo "I am on ${{ github.repository }}"
+
+      - name: Print workflow
+        run: echo "I am running workflow ${{ github.workflow }}"
+
+      - name: Triggered by
+        run: echo "I am running as ${{ github.actor }}"
+
+      - name: Secret 1
+        run: echo "AWS access key is configured: ${{ secrets.AWS_ACCESS_KEY }}"
+
+      - name: Secret 2
+        run: echo "AWS secret key is configured: ${{ secrets.AWS_SECRET_KEY }}"
