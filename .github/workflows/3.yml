@@ -3,7 +3,7 @@ name: Push on specific branch
 on: 
   push:
     branches:
-      - featurex
+      - main
       - develop
 
 jobs:
