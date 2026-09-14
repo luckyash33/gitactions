@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Say my name
-        run: echo "My name is GitHub Actions"
+        run: echo "My name is GitHub Actins"
