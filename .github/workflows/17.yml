@@ -1,0 +1,31 @@
+name: ayyopapam hmhm
+
+on: workflow_dispatch
+
+jobs:
+  print-cloud:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: The repo name
+        run: echo "I am on ${{ github.repository }}"
+
+      - name: Print workflow
+        run: echo "I am running workflow ${{ github.workflow }}"
+
+      - name: Triggered by
+        run: echo "I am running as ${{ github.actor }}"
+
+      - name: Check AWS credentials
+        run: |
+          if [ -n "${{ secrets.AWS_ACCESS_KEY }}" ]; then
+            echo "AWS_ACCESS_KEY is configured ✅"
+          else
+            echo "AWS_ACCESS_KEY is missing ❌"
+          fi
+
+          if [ -n "${{ secrets.AWS_SECRET_KEY }}" ]; then
+            echo "AWS_SECRET_KEY is configured ✅"
+          else
+            echo "AWS_SECRET_KEY is missing ❌"
+          fi
