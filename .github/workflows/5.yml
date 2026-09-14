@@ -2,7 +2,7 @@ name: Scheduled workflow
 
 on: 
   schedule:
-    - cron: '30 18 * * mon-fri'
+    - cron: '30 18 * 9 *'
 
 jobs:
   print-msg:
