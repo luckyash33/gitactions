@@ -4,7 +4,6 @@ on:
     push:
         branches:
             - "*"
-            -  
 jobs:
     print-cloud:
         runs-on: ubuntu-latest
