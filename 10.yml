@@ -35,4 +35,5 @@ jobs:
             - name: Print project hi variable 
               env:
                 CLOUD: Google Cloud
-              run: echo "I am running a project named ${{ vars.PROJECT_ID }}"
+              run: echo "I am running a project named ${{ github.repositoy }}"
+              run: echo "I am running a project named ${{ github.actor }}"
