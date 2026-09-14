@@ -1,0 +1,17 @@
+name: context variable
+
+on:
+    push:
+        branches:
+            - "*"
+            -  
+jobs:
+    print-cloud:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Print repo name
+              run: echo "I am running on ${{ github.repository }}"
+            - name: Print repo owner
+              run: echo "I am running on ${{ github.actor}}"
+
+              
