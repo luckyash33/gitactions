@@ -13,7 +13,8 @@ jobs:
         run: echo "I am running workflow ${{ github.workflow }}"
       - name: Triggered by
         run: echo "I am running as ${{ github.actor }}"
-      - name: Secret 1
-        run: echo "AWS access key is configured: ${{ secrets.AWS_ACCESS_KEY }}"
-      - name: Secret 2
-        run: echo "AWS secret key is configured: ${{ secrets.AWS_SECRET_KEY }}"
+      - name: Secret variable 1
+        run: echo "this access key is configured ${{ secrets.AWS_ACCESS_KEY }}" 
+      - name: Secret variable 1
+        run: echo "this access key is configured ${{ secrets.AWS_SECRET_KEY }}" 
+
