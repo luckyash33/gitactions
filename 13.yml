@@ -1,0 +1,15 @@
+name: context variable 
+
+on: workflow_dispatch
+jobs:
+    print-cloud:
+        runs-on: ubuntu-latest
+        steps:
+            - name: the repo name
+              run: echo "I am on ${{ github.repository }}"
+            - name: Print repo owner
+              run: echo "I am running on ${{ github.workflow }}"
+            - name: trigger by
+              run: echo "I am running on ${{ github.actor}}"
+
+              
