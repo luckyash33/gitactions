@@ -21,4 +21,4 @@ jobs:
 
       - name: copy SCP files to EC2
         run: 
-          sudo scp -o StrictHostKeyChecking=no -i key.pem -r * ${{ secrets.USER }}@${{ secrets.IP }}:/var/www/html/
+          sudo scp -o StrictHostKeyChecking=no -i key.pem -r index.html ${{ secrets.USER }}@${{ secrets.IP }}:/var/www/html/
