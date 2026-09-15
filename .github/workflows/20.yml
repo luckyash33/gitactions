@@ -1,4 +1,4 @@
-name: AWS OIDC example
+name: AWS OIDC example aws
 
 on:
   push:
