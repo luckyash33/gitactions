@@ -1,0 +1,33 @@
+name: Code Quality 1
+
+on:
+  workflow_call:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12","3.11"]
+        
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+
+      - name: RUN lint SCAN - flake8
+        run: pip install pip-audit   
+
+      - name: Install Dependencies and tools
+        run: pip-audit -r requirements.txt
+
+      
+    
+
+      
