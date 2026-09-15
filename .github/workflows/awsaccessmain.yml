@@ -1,4 +1,4 @@
-name: Aws access
+name: Aws access final
 
 on:
   push:
@@ -15,8 +15,8 @@ jobs:
       - name: configure aws credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
-          aws-region: us-east-2
-          role-to-assume: arn:aws:iam::893794042027:role/GHQACGHJ
+          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::893794042027:role/gha
       - name: verify the user
         run: aws sts get-caller-identity
       - name: list s3 buckets
