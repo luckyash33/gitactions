@@ -1,0 +1,39 @@
+name: Code Quality 
+
+on:
+  workflow_call:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12","3.11]
+        
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies and tools
+        run: |
+          pip install -r requirements.txt
+          pip install flake8 bandit
+
+      - name: RUN lint SCAN - flake8
+        run: flake8 app.py   
+          
+      - name: RUN SAST SCAN - Bandit
+        run: bandit -r app.py
+
+      
+        
+      - name: RUN SAST SCAN - Bandit
+        run: bandit -r app.py
+      
