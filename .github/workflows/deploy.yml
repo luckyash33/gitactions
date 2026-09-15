@@ -1,0 +1,43 @@
+name: job des
+
+on:
+  workflow_dispatch:
+   inputs:
+     environments: 
+        description: Target env
+        default: dev
+        required: true
+        type: choice
+        options:
+          - dev
+          - uat
+          - prod
+jobs:
+  code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: close the code from git
+        run: echo "code closned from github"
+  build:
+    needs: [code]
+    runs-on: ubuntu-latest
+    steps:
+      - name: build docker build
+        run: echo "docker imahes build"
+   test:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test results
+        run: echo "Test complete"
+    deploy:
+     needs: [build,test]
+     if: ${{ inputs.environments == 'dev' }}
+     runs-on: ubuntu-latest
+     steps:
+      - name: deploy step
+        run: echo "Deploy dev complete"     
+  
+        
+
+        
