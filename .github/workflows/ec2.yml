@@ -1,5 +1,4 @@
-name: Deploy to EC2 env:
-  
+name: Deploy to EC2 instance
 
 on:
   push:
