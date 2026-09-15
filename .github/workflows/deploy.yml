@@ -1,43 +1,29 @@
-name: job des
+name: Code Quality with flake and bandit
 
 on:
-  workflow_dispatch:
-   inputs:
-     environments: 
-        description: Target env
-        default: dev
-        required: true
-        type: choice
-        options:
-          - dev
-          - uat
-          - prod
-jobs:
-  code:
-    runs-on: ubuntu-latest
-    steps:
-      - name: close the code from git
-        run: echo "code closned from github"
-  build:
-    needs: [code]
-    runs-on: ubuntu-latest
-    steps:
-      - name: build docker build
-        run: echo "docker imahes build"
-   test:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test results
-        run: echo "Test complete"
-    deploy:
-     needs: [build,test]
-     if: ${{ inputs.environments == 'dev' }}
-     runs-on: ubuntu-latest
-     steps:
-      - name: deploy step
-        run: echo "Deploy dev complete"     
-  
-        
+  workflow_call:
 
-        
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies and Tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install flake8 bandit
+
+      - name: Run Flake8
+        run: flake8 app.py
+
+      - name: Run Bandit
+        run: bandit app.py
