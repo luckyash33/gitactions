@@ -9,19 +9,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Check out the code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Configure AWS Credentials using the stored secrets
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1 # Replace with your target region
-
-      # Step 3: Run your commands (e.g., AWS CLI, S3 sync, etc.)
-      - name: Interact with AWS
-        run: |
-          aws s3 ls
+     - name: Checkout code
+       uses: actions/checkout@v4
+     - name: Configure AWS Credentials
+       uses: aws-actions/configure-aws-credentials@v4
+       with:
+         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+         aws-region: ap-south-1
+     - name: Verify AWS identity
+       run: aws sts get-caller-identity
+     - name: List S3 buckets
+       run: aws s3 ls 
