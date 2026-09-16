@@ -73,7 +73,7 @@ jobs:
       - name: Set image URI as job output
         id: set-image-uri
         run: |
-          echo "image_uri=$IMAGE_FULL_URI" >> $GITHUB_OUTPUT
+          echo "image_uri=$FULL_URI" >> $GITHUB_OUTPUT
           echo "Job output set: $IMAGE_FULL_URI"
  # ─────────────────────────────────────────────────────────────
   deploy-to-ecs:
