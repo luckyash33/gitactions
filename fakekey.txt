@@ -1,4 +1,4 @@
-AWS_ACCESS_KEY=nefckewjhfioewfelwkmflkewmflkew
+AWS_ACCESS_KEY=AKIA5AGSGYCVVLSDAL4G
 AWS_SECRET_ACCESS_KEY=jhfiuwrhfiuhioejrfoqkowqkfd
 API_KEY=jkdkjendkjewnfkewf
 SLACK_KEY=,wndkef
