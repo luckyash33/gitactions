@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
 
 env:
   AWS_REGION:         ${{ secrets.AWS_REGION }}
@@ -19,11 +19,11 @@ env:
 
 jobs:
 
-  # ============================================================
-  # BUILD AND PUSH IMAGE
-  # ============================================================
+  # ==========================================================
+  # BUILD AND PUSH DOCKER IMAGE TO ECR
+  # ==========================================================
   build-and-push:
-    name: Build and push Docker image to ECR
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     outputs:
@@ -31,9 +31,15 @@ jobs:
 
     steps:
 
-      - name: Checkout repo
+      # --------------------------------------------------------
+      # Checkout source code
+      # --------------------------------------------------------
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --------------------------------------------------------
+      # Configure AWS credentials
+      # --------------------------------------------------------
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -41,40 +47,102 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # --------------------------------------------------------
+      # Login to Amazon ECR
+      # --------------------------------------------------------
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
           mask-password: 'true'
 
-      - name: Save ECR registry to environment
+      # --------------------------------------------------------
+      # Save ECR registry
+      # --------------------------------------------------------
+      - name: Save ECR registry
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           echo "ECR_REGISTRY=$REGISTRY" >> "$GITHUB_ENV"
 
-            - name: Build, tag and push to ECR
+          echo "ECR Registry:"
+          echo "$REGISTRY"
+
+      # --------------------------------------------------------
+      # Build and Push Docker Image
+      # --------------------------------------------------------
+      - name: Build and Push Docker Image
         run: |
+          set -e
+
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPO_NAME"
           SHORT_TAG="v-${IMAGE_TAG::7}"
           FULL_URI="$IMAGE_URI:$SHORT_TAG"
 
-          echo "Building: $FULL_URI"
+          echo "=========================================="
+          echo "ECR Registry : $ECR_REGISTRY"
+          echo "ECR Repository: $ECR_REPO_NAME"
+          echo "Git SHA      : $IMAGE_TAG"
+          echo "Image Tag    : $SHORT_TAG"
+          echo "Full Image   : $FULL_URI"
+          echo "=========================================="
 
-          docker build -t "$FULL_URI" .
+          if [ -z "$ECR_REGISTRY" ]; then
+            echo "ERROR: ECR_REGISTRY is empty!"
+            exit 1
+          fi
 
-          docker tag "$FULL_URI" "$IMAGE_URI:latest"
+          if [ -z "$ECR_REPO_NAME" ]; then
+            echo "ERROR: ECR_REPO_NAME is empty!"
+            exit 1
+          fi
+
+          if [ -z "$FULL_URI" ]; then
+            echo "ERROR: FULL_URI is empty!"
+            exit 1
+          fi
+
+          echo "Building Docker image..."
+
+          docker build \
+            -t "$FULL_URI" \
+            .
+
+          echo "Tagging latest..."
+
+          docker tag \
+            "$FULL_URI" \
+            "$IMAGE_URI:latest"
+
+          echo "Pushing versioned image..."
 
           docker push "$FULL_URI"
+
+          echo "Pushing latest image..."
+
           docker push "$IMAGE_URI:latest"
 
-          echo "SHORT_TAG=$SHORT_TAG" >> "$GITHUB_ENV"
-          echo "FULL_URI=$FULL_URI" >> "$GITHUB_ENV"
+          echo "=========================================="
+          echo "Docker image pushed successfully"
+          echo "Image: $FULL_URI"
+          echo "=========================================="
 
+          # Make FULL_URI available to following steps
+          echo "FULL_URI=$FULL_URI" >> "$GITHUB_ENV"
+          echo "SHORT_TAG=$SHORT_TAG" >> "$GITHUB_ENV"
+
+      # --------------------------------------------------------
+      # Create Job Output
+      # --------------------------------------------------------
       - name: Set image URI as job output
         id: set-image-uri
         run: |
+          set -e
+
+          echo "=========================================="
+          echo "Checking FULL_URI..."
           echo "FULL_URI=[$FULL_URI]"
+          echo "=========================================="
 
           if [ -z "$FULL_URI" ]; then
             echo "ERROR: FULL_URI is empty!"
@@ -83,20 +151,36 @@ jobs:
 
           echo "image_uri=$FULL_URI" >> "$GITHUB_OUTPUT"
 
-          echo "Output created successfully"
+          echo "Job output created:"
+          echo "$FULL_URI"
 
-      - name: Verify job output
+      # --------------------------------------------------------
+      # Verify Step Output
+      # --------------------------------------------------------
+      - name: Verify image URI output
         run: |
-          echo "Step output:"
+          echo "=========================================="
+          echo "STEP OUTPUT"
+          echo "=========================================="
+
+          echo "Image URI:"
           echo "${{ steps.set-image-uri.outputs.image_uri }}"
 
+          if [ -z "${{ steps.set-image-uri.outputs.image_uri }}" ]; then
+            echo "ERROR: Step output is empty!"
+            exit 1
+          fi
 
-  # ============================================================
+          echo "Step output verification successful!"
+
+
+  # ==========================================================
   # DEPLOY TO ECS
-  # ============================================================
+  # ==========================================================
   deploy-to-ecs:
     name: Deploy to ECS
     runs-on: ubuntu-latest
+
     needs: build-and-push
 
     env:
@@ -104,6 +188,9 @@ jobs:
 
     steps:
 
+      # --------------------------------------------------------
+      # Configure AWS credentials
+      # --------------------------------------------------------
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -111,36 +198,109 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ------------------------------------------------------------
-      # Verify image URI passed from previous job
-      # ------------------------------------------------------------
+      # --------------------------------------------------------
+      # Verify image URI from previous job
+      # --------------------------------------------------------
       - name: Verify image URI
         run: |
+          echo "=========================================="
+          echo "IMAGE URI FROM BUILD JOB"
+          echo "=========================================="
+
           echo "IMAGE_FULL_URI=[$IMAGE_FULL_URI]"
 
           if [ -z "$IMAGE_FULL_URI" ]; then
             echo "ERROR: IMAGE_FULL_URI is empty!"
+            echo "The build job did not provide the image URI."
             exit 1
           fi
 
-      # ------------------------------------------------------------
+          echo "Image URI received successfully:"
+          echo "$IMAGE_FULL_URI"
+
+      # --------------------------------------------------------
+      # Verify ECS configuration
+      # --------------------------------------------------------
+      - name: Verify ECS configuration
+        run: |
+          echo "=========================================="
+          echo "ECS CONFIGURATION"
+          echo "=========================================="
+
+          echo "Cluster       : $ECS_CLUSTER_NAME"
+          echo "Service       : $ECS_SERVICE_NAME"
+          echo "Task Definition: $ECS_TASK_DEF_NAME"
+          echo "Container Name: $ECS_CONTAINER_NAME"
+
+          if [ -z "$ECS_CLUSTER_NAME" ]; then
+            echo "ERROR: ECS_CLUSTER_NAME is empty!"
+            exit 1
+          fi
+
+          if [ -z "$ECS_SERVICE_NAME" ]; then
+            echo "ERROR: ECS_SERVICE_NAME is empty!"
+            exit 1
+          fi
+
+          if [ -z "$ECS_TASK_DEF_NAME" ]; then
+            echo "ERROR: ECS_TASK_DEF_NAME is empty!"
+            exit 1
+          fi
+
+          if [ -z "$ECS_CONTAINER_NAME" ]; then
+            echo "ERROR: ECS_CONTAINER_NAME is empty!"
+            exit 1
+          fi
+
+      # --------------------------------------------------------
       # Download current ECS task definition
-      # ------------------------------------------------------------
+      # --------------------------------------------------------
       - name: Download current task definition
         run: |
+          set -e
+
+          echo "Downloading ECS task definition..."
+
           aws ecs describe-task-definition \
             --task-definition "$ECS_TASK_DEF_NAME" \
             --query taskDefinition \
+            --output json \
             > task-def.json
 
           echo "Current task definition:"
           cat task-def.json
 
-      # ------------------------------------------------------------
-      # Update container image
-      # ------------------------------------------------------------
-      - name: Update container image in task definition
+      # --------------------------------------------------------
+      # Show current container names
+      # --------------------------------------------------------
+      - name: Check container name
         run: |
+          echo "=========================================="
+          echo "CONTAINERS IN TASK DEFINITION"
+          echo "=========================================="
+
+          jq -r '.containerDefinitions[].name' task-def.json
+
+          echo "Expected container:"
+          echo "$ECS_CONTAINER_NAME"
+
+      # --------------------------------------------------------
+      # Update container image
+      # --------------------------------------------------------
+      - name: Update container image
+        run: |
+          set -e
+
+          echo "=========================================="
+          echo "UPDATING CONTAINER IMAGE"
+          echo "=========================================="
+
+          echo "Container name:"
+          echo "$ECS_CONTAINER_NAME"
+
+          echo "New image:"
+          echo "$IMAGE_FULL_URI"
+
           jq --arg IMAGE "$IMAGE_FULL_URI" \
              --arg NAME "$ECS_CONTAINER_NAME" \
              '
@@ -160,67 +320,107 @@ jobs:
                .registeredAt,
                .registeredBy
              )
-             ' task-def.json > new-task-def.json
+             ' \
+             task-def.json \
+             > new-task-def.json
 
           echo "Updated task definition:"
           cat new-task-def.json
 
-      # ------------------------------------------------------------
-      # Verify container image before registration
-      # ------------------------------------------------------------
+      # --------------------------------------------------------
+      # Verify container image
+      # --------------------------------------------------------
       - name: Verify container image
         run: |
+          set -e
+
+          echo "=========================================="
+          echo "VERIFYING CONTAINER IMAGE"
+          echo "=========================================="
+
           IMAGE=$(jq -r \
             --arg NAME "$ECS_CONTAINER_NAME" \
             '
             .containerDefinitions[]
             | select(.name == $NAME)
             | .image
-            ' new-task-def.json)
+            ' \
+            new-task-def.json)
 
-          echo "Container name : $ECS_CONTAINER_NAME"
-          echo "Container image: $IMAGE"
+          echo "Container Name : $ECS_CONTAINER_NAME"
+          echo "Container Image: $IMAGE"
 
           if [ -z "$IMAGE" ] || [ "$IMAGE" = "null" ]; then
             echo "ERROR: Container image is empty!"
+            echo "Check ECS_CONTAINER_NAME."
             exit 1
           fi
 
-      # ------------------------------------------------------------
+          if [ "$IMAGE" != "$IMAGE_FULL_URI" ]; then
+            echo "ERROR: Container image does not match IMAGE_FULL_URI!"
+            echo "Expected: $IMAGE_FULL_URI"
+            echo "Actual  : $IMAGE"
+            exit 1
+          fi
+
+          echo "Container image verification successful!"
+
+      # --------------------------------------------------------
       # Register new task definition
-      # ------------------------------------------------------------
+      # --------------------------------------------------------
       - name: Register new task definition revision
         run: |
+          set -e
+
+          echo "Registering new ECS task definition..."
+
           NEW_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://new-task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
 
+          if [ -z "$NEW_ARN" ] || [ "$NEW_ARN" = "None" ]; then
+            echo "ERROR: ECS task definition registration failed!"
+            exit 1
+          fi
+
           echo "NEW_TASK_DEF_ARN=$NEW_ARN" >> "$GITHUB_ENV"
 
-          echo "Registered:"
+          echo "=========================================="
+          echo "New Task Definition:"
           echo "$NEW_ARN"
+          echo "=========================================="
 
-      # ------------------------------------------------------------
+      # --------------------------------------------------------
       # Update ECS service
-      # ------------------------------------------------------------
+      # --------------------------------------------------------
       - name: Update ECS service
         run: |
+          set -e
+
+          echo "Updating ECS service..."
+
           aws ecs update-service \
             --cluster "$ECS_CLUSTER_NAME" \
             --service "$ECS_SERVICE_NAME" \
             --task-definition "$NEW_TASK_DEF_ARN" \
             --force-new-deployment
 
-      # ------------------------------------------------------------
+          echo "ECS service update initiated successfully."
+
+      # --------------------------------------------------------
       # Wait for ECS deployment
-      # ------------------------------------------------------------
-      - name: Wait for deployment to stabilize
+      # --------------------------------------------------------
+      - name: Wait for ECS deployment
         run: |
+          echo "Waiting for ECS service to stabilize..."
+
           aws ecs wait services-stable \
             --cluster "$ECS_CLUSTER_NAME" \
             --services "$ECS_SERVICE_NAME"
 
-          echo "======================================"
-          echo "Deployment completed successfully!"
-          echo "======================================"
+          echo "=========================================="
+          echo "DEPLOYMENT COMPLETED SUCCESSFULLY"
+          echo "=========================================="
+          echo "Image deployed:"
+          echo "$IMAGE_FULL_URI"
