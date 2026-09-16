@@ -53,18 +53,13 @@ jobs:
         run: |
           echo "ECR_REGISTRY=$REGISTRY" >> "$GITHUB_ENV"
 
-      - name: Build, tag and push to ECR
+            - name: Build, tag and push to ECR
         run: |
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPO_NAME"
           SHORT_TAG="v-${IMAGE_TAG::7}"
           FULL_URI="$IMAGE_URI:$SHORT_TAG"
 
-          echo "======================================"
-          echo "ECR Registry : $ECR_REGISTRY"
-          echo "Repository   : $ECR_REPO_NAME"
-          echo "Image Tag    : $SHORT_TAG"
-          echo "Full Image   : $FULL_URI"
-          echo "======================================"
+          echo "Building: $FULL_URI"
 
           docker build -t "$FULL_URI" .
 
@@ -79,8 +74,21 @@ jobs:
       - name: Set image URI as job output
         id: set-image-uri
         run: |
+          echo "FULL_URI=[$FULL_URI]"
+
+          if [ -z "$FULL_URI" ]; then
+            echo "ERROR: FULL_URI is empty!"
+            exit 1
+          fi
+
           echo "image_uri=$FULL_URI" >> "$GITHUB_OUTPUT"
-          echo "Job output set: $FULL_URI"
+
+          echo "Output created successfully"
+
+      - name: Verify job output
+        run: |
+          echo "Step output:"
+          echo "${{ steps.set-image-uri.outputs.image_uri }}"
 
 
   # ============================================================
