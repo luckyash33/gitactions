@@ -6,7 +6,7 @@ FROM python:3.12-slim
 
 # Metadata labels — good practice, helps identify images in Docker Hub
 LABEL maintainer="ashok.com"
-LABEL batch="batch-7"
+LABEL batch="Learning"
 LABEL description="Ashok GitHub Actions demo app"
 
 # Set working directory inside the container
