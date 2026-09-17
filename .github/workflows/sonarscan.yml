@@ -1,4 +1,4 @@
-name: SonarCloud Code Quality
+name: SonarCloud Code scan
 
 on:
   push:
