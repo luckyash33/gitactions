@@ -1,0 +1,63 @@
+name: Final Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: 
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPO_NAME: ${{ secrets.ECR_REPO_NAME }}
+  IMAGE_TAG: ${{ github.sha }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  
+jobs:
+  build-and-push:
+    name: Build Docker image & push it to ECR
+    runs-on: ubuntu-latest
+
+    #Checkout the repo (Its picks the Dockerfile from the Repo)
+    steps:
+      - uses: actions/checkout@v6
+        
+    # Configuring AWS credentials
+      - name: configure aws credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+    # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+    # Set ECR registry env var
+      - name: Set ECR Registry env var
+        run: echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+    # Buils, add a tag and then push to ECR
+      - name: Build, tag and push to ecr repo
+        run: |
+          echo "Building Docker image..."
+          docker build -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPO_NAME:latest
+
+          echo "Pushing to ECR.."
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:latest
+
+          echo "Done..!! Image $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG is pushed to ECR"
+          
+          
+
+
+
+
+        
